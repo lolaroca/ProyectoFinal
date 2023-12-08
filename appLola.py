@@ -230,7 +230,7 @@ def predecir_arima(datos, sensor_id):
 app = dash.Dash(__name__)
 
 app.layout = html.Div(
-    style={'backgroundColor': '#FFFFFF'},
+    style={'backgroundColor': 'white'},
     children=[
         html.H1("ANÁLISIS ENERGÍA EN NYUMBANI, KENIA", style={
             'textAlign': 'center', 
