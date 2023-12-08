@@ -76,11 +76,11 @@ def obtener_datos(api_url, api_token, sensor_name):
     return fechas
 def crear_graficoAlterna(sensor11, sensor12, sensor24,sensor25,sensor26):
     # Definir las URL de la API para cada sensor
-    api_url_sensor1 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjeor/data?limit=10000"
-    api_url_sensor2 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjeos/data?limit=10000"
-    api_url_sensor3 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjfex/data?limit=10000"
-    api_url_sensor4 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjfey/data?limit=10000"
-    api_url_sensor5 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjfez/data?limit=10000"
+    api_url_sensor1 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjeor/data?limit=80000"
+    api_url_sensor2 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjeos/data?limit=80000"
+    api_url_sensor3 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjfex/data?limit=80000"
+    api_url_sensor4 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjfey/data?limit=80000"
+    api_url_sensor5 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjfez/data?limit=80000"
 
 
     # Definir los tokens de API para cada sensor
@@ -115,8 +115,8 @@ def crear_graficoAlterna(sensor11, sensor12, sensor24,sensor25,sensor26):
     return fig
 def crear_graficoContinua(sensor41, sensor42):
     # Definir las URL de la API para cada sensor
-    api_url_sensor1 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjfkn/data?limit=10000"
-    api_url_sensor2 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjfko/data?limit=10000"
+    api_url_sensor1 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjfkn/data?limit=80000"
+    api_url_sensor2 = "https://api.energomonitor.com/v1/feeds/emjeic/streams/emjfko/data?limit=80000"
 
 
     # Definir los tokens de API para cada sensor
@@ -195,7 +195,7 @@ def actualizar_tabla_estadisticas(sensores_seleccionados):
     datos_sensores = {}
 
     for sensor_id in sensores_seleccionados:
-        api_url_sensor = f"https://api.energomonitor.com/v1/feeds/emjeic/streams/{sensor_id}/data?limit=5000"
+        api_url_sensor = f"https://api.energomonitor.com/v1/feeds/emjeic/streams/{sensor_id}/data?limit=80000"
         token = "3QUluAp7EODWp4xFaMBAeb2ZkEOnhm"
         sensor=escogerSensor(sensor_id)
         df_sensor = obtener_datos(api_url_sensor, token, sensor) #lista con fechas, valor, sensor
@@ -452,7 +452,7 @@ def actualizar_prediccion_texto(sensores_alterna, sensores_continua):
     if sensores_alterna:
         for sensor_id in sensores_alterna:
             sensor=escogerSensor(sensor_id)
-            api_url_sensor = f"https://api.energomonitor.com/v1/feeds/emjeic/streams/{sensor_id}/data?limit=10000"
+            api_url_sensor = f"https://api.energomonitor.com/v1/feeds/emjeic/streams/{sensor_id}/data?limit=80000"
             df_sensor = obtener_datos(api_url_sensor, "p9pbDtQLtXui9OVz8KBoXIdp0916qE", sensor)
             
             if df_sensor is not None:
@@ -472,7 +472,7 @@ def actualizar_prediccion_texto(sensores_alterna, sensores_continua):
     if sensores_continua:
         for sensor_id in sensores_continua:
             sensor=escogerSensor(sensor_id)
-            api_url_sensor = f"https://api.energomonitor.com/v1/feeds/emjeic/streams/{sensor_id}/data?limit=10000"
+            api_url_sensor = f"https://api.energomonitor.com/v1/feeds/emjeic/streams/{sensor_id}/data?limit=80000"
             df_sensor = obtener_datos(api_url_sensor, "p9pbDtQLtXui9OVz8KBoXIdp0916qE", sensor)
             
             if df_sensor is not None:
