@@ -7,12 +7,38 @@ import pandas as pd
 import time
 import plotly.express as px
 from dash import dash_table
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+import numpy as np
+import statsmodels.api as sm
 
 
 
 
 # Función para obtener los datos del sensor seleccionado
 # Función para crear el gráfico comparativo
+def escogerSensor(sensor_id):
+    sensor = ""
+    if sensor_id == "emjeor":
+        sensor = "Sensor 1,1"
+    elif sensor_id == "emjeos":
+        sensor = "Sensor 1,2"
+    elif sensor_id == "emjfex":
+        sensor = "Sensor 2,4"
+    elif sensor_id == "emjfey":
+        sensor = "Sensor 2,5"
+    elif sensor_id == "emjfez":
+        sensor = "Sensor 2,6"
+    elif sensor_id == "emjfkn":
+        sensor = "Sensor 4,1"
+    elif sensor_id == "emjfko":
+        sensor = "Sensor 4,2"
+    else:
+        sensor = ""
+    return sensor
+
+
 def crearLista(json):
     datos=[]
     for i in range(len(json)):
@@ -21,7 +47,7 @@ def crearLista(json):
         datos.append([dia, json[i][1]])
     return datos
 
-def obtener_datos(api_url, api_token):
+def obtener_datos(api_url, api_token, sensor_name):
     headers = {
         'Authorization': f'Bearer {api_token}'
         # Otros encabezados si son necesarios
@@ -32,12 +58,11 @@ def obtener_datos(api_url, api_token):
         response.raise_for_status()  # Raises HTTPError for bad responses
 
         json = response.json()
-        datos = crearLista(json)  # nos cremos una lista [fecha, valor]
+        datos = crearLista(json)  # nos creamos una lista [fecha, valor]
         fechas = [datos[i][0] for i in range(len(datos))]
         valores = [datos[i][1] for i in range(len(datos))]
-        sensor = ["sensor 1,1" for i in range(len(datos))]
+        sensor = [sensor_name for i in range(len(datos))]
         df = pd.DataFrame({'fechas': fechas, 'valores': valores, 'sensores': sensor})
-
         return df
     except requests.exceptions.RequestException as e:
         print(f"Error al obtener datos desde la API. Error: {e}")
@@ -59,16 +84,18 @@ def crear_graficoAlterna(sensor11, sensor12, sensor24,sensor25,sensor26):
 
 
     # Definir los tokens de API para cada sensor
-    token = "p9pbDtQLtXui9OVz8KBoXIdp0916qE"
+    token = "3QUluAp7EODWp4xFaMBAeb2ZkEOnhm"
 
     # Obtener datos para cada sensor
-    df1 = obtener_datos(api_url_sensor1, token)
-    df2 = obtener_datos(api_url_sensor2, token)
-    df3= obtener_datos(api_url_sensor3, token)
-    df4=obtener_datos(api_url_sensor4, token)
-    df5=obtener_datos(api_url_sensor5, token)
+    df1 = obtener_datos(api_url_sensor1, token, 'Sensor 1,1')
+    df2 = obtener_datos(api_url_sensor2, token, 'Sensor 1,2')
+    df3 = obtener_datos(api_url_sensor3, token, 'Sensor 2,4')
+    df4 = obtener_datos(api_url_sensor4, token, 'Sensor 2,5')
+    df5 = obtener_datos(api_url_sensor5, token, 'Sensor 2,6')
 
 
+    
+    
     
     fig = go.Figure()
     if sensor11:
@@ -83,6 +110,8 @@ def crear_graficoAlterna(sensor11, sensor12, sensor24,sensor25,sensor26):
         fig.add_trace(go.Scatter(x=df5["fechas"], y=df5["valores"], mode='lines', name="sensor2,6"))
     
     
+    
+    
     return fig
 def crear_graficoContinua(sensor41, sensor42):
     # Definir las URL de la API para cada sensor
@@ -91,11 +120,11 @@ def crear_graficoContinua(sensor41, sensor42):
 
 
     # Definir los tokens de API para cada sensor
-    token = "p9pbDtQLtXui9OVz8KBoXIdp0916qE"
+    token = "3QUluAp7EODWp4xFaMBAeb2ZkEOnhm"
 
     # Obtener datos para cada sensor
-    df1 = obtener_datos(api_url_sensor1, token)
-    df2 = obtener_datos(api_url_sensor2, token)
+    df1 = obtener_datos(api_url_sensor1, token, "Sensor 4,1")
+    df2 = obtener_datos(api_url_sensor2, token, "Sensor 4,2")
 
 
     
@@ -132,6 +161,7 @@ def crearMapa():
 
     return fig
 
+
 def calcular_estadisticas_sensor(df):
     max_valor = df['valores'].max()
     min_valor = df['valores'].min()
@@ -141,13 +171,16 @@ def calcular_estadisticas_sensor(df):
         
     return max_valor, dia_max, min_valor, dia_min, media
 
+
+
 def calcular_estadisticas_globales(datos_sensores):
     estadisticas_globales = []
 
     for sensor_id, df_sensor in datos_sensores.items():
         max_valor, dia_max, min_valor, dia_min, media = calcular_estadisticas_sensor(df_sensor)
+        sensor = escogerSensor(sensor_id)
         estadisticas_globales.append({
-            'Sensor': sensor_id,
+            'Sensor': sensor,
             'Máximo': max_valor,
             'Día Máximo': dia_max,
             'Mínimo': min_valor,
@@ -158,22 +191,38 @@ def calcular_estadisticas_globales(datos_sensores):
     estadisticas_df = pd.DataFrame(estadisticas_globales)
     return estadisticas_df
 
-
-
 def actualizar_tabla_estadisticas(sensores_seleccionados):
     datos_sensores = {}
 
     for sensor_id in sensores_seleccionados:
         api_url_sensor = f"https://api.energomonitor.com/v1/feeds/emjeic/streams/{sensor_id}/data?limit=5000"
-        token = "p9pbDtQLtXui9OVz8KBoXIdp0916qE"
-        df_sensor = obtener_datos(api_url_sensor, token) #lista con fechas, valor, sensor
+        token = "3QUluAp7EODWp4xFaMBAeb2ZkEOnhm"
+        sensor=escogerSensor(sensor_id)
+        df_sensor = obtener_datos(api_url_sensor, token, sensor) #lista con fechas, valor, sensor
         if df_sensor is not None:
             datos_sensores[sensor_id] = df_sensor
 
     estadisticas_globales = calcular_estadisticas_globales(datos_sensores)
     estadisticas_data = estadisticas_globales.to_dict('records')
-    
     return estadisticas_data
+
+    
+def predecir_arima(datos, sensor_id):
+    # Ajustar el modelo ARIMA
+    modelo = sm.tsa.ARIMA(datos['valores'], order=(1, 1, 1))
+    resultados = modelo.fit()
+
+    # Hacer predicciones para el próximo día
+    predicciones = resultados.get_forecast(steps=1)
+
+    # Crear un DataFrame con la fecha y la predicción
+    fecha_prediccion = pd.date_range(start=datos['fechas'].max(), periods=2, freq='D')[1:]
+    df_predicciones = pd.DataFrame({'fechas': fecha_prediccion, f'predicciones_{sensor_id}': predicciones.predicted_mean})
+
+    return df_predicciones
+
+
+
 
 
 
@@ -257,6 +306,7 @@ app.layout = html.Div(
                     dash_table.DataTable(
                         id='tabla-estadisticas',
                         columns=[
+                             {"name": "Sensor","id" : "Sensor" },
                             {'name': 'Máximo', 'id': 'Máximo'},
                             {'name': 'Día Máximo', 'id': 'Día Máximo'},
                             {'name': 'Mínimo', 'id': 'Mínimo'},
@@ -297,6 +347,7 @@ app.layout = html.Div(
                     dash_table.DataTable(
                         id='tabla-estadisticas2',
                         columns=[
+                            {"name": "Sensor","id" : "Sensor" },
                             {'name': 'Máximo', 'id': 'Máximo'},
                             {'name': 'Día Máximo', 'id': 'Día Máximo'},
                             {'name': 'Mínimo', 'id': 'Mínimo'},
@@ -307,10 +358,19 @@ app.layout = html.Div(
                     )
                 ], style={'width': '50%', 'display': 'inline-block', 'background-color': 'white', 'padding': '20px'}),
 
-
-
-
         ]),
+        html.Div([
+            html.H2("Predicciones a esta hora de cada sensor mañana", style={'textAlign': 'center', 'font-family': 'Times New Roman', 'color': 'white'}),
+        ], style={'background-color': '#804000', 'padding': '10px', 'border-radius': '10px'}),
+
+        #PREDICCIONES
+       html.Div([
+        html.H2("Predicciones ARIMA", style={'textAlign': 'center', 'font-family': 'Times New Roman', 'color': 'white'}),
+        html.Div(id='prediccion-arima-texto-container', style={'display': 'flex', 'flexWrap': 'wrap'}),]),
+
+
+
+
     ]
 )
 
@@ -329,7 +389,12 @@ def actualizar_grafico(sensores_seleccionados):
     sensor24 = 'emjfex' if 'emjfex' in sensores_seleccionados else None
     sensor25 = 'emjfey' if 'emjfey' in sensores_seleccionados else None
     sensor26 = 'emjfez' if 'emjfez' in sensores_seleccionados else None
-    return crear_graficoAlterna(sensor11, sensor12, sensor24, sensor25, sensor26)
+    # Predicciones de las horas del día en las que más se genera energía
+   
+
+    fig = crear_graficoAlterna(sensor11, sensor12, sensor24, sensor25, sensor26)
+    
+    return fig
 
 
 @app.callback(
@@ -375,6 +440,58 @@ def actualizar_tabla(sensores_seleccionados):
 
 
     return actualizar_tabla_estadisticas(id_sensores)
+# Después de las funciones actuales, añade dos nuevas funciones para actualizar los gráficos ARIMA
+@app.callback(
+    [Output('prediccion-arima-texto-container', 'children')],
+    [Input('sensores-checkboxes1', 'value'),
+     Input('sensores-checkboxes3', 'value')],
+)
+def actualizar_prediccion_texto(sensores_alterna, sensores_continua):
+    texto_predicciones = []
+
+    if sensores_alterna:
+        for sensor_id in sensores_alterna:
+            sensor=escogerSensor(sensor_id)
+            api_url_sensor = f"https://api.energomonitor.com/v1/feeds/emjeic/streams/{sensor_id}/data?limit=10000"
+            df_sensor = obtener_datos(api_url_sensor, "p9pbDtQLtXui9OVz8KBoXIdp0916qE", sensor)
+            
+            if df_sensor is not None:
+                df_predicciones = predecir_arima(df_sensor, sensor_id)
+                max_prediccion = df_predicciones[f'predicciones_{sensor_id}'].max()
+                fecha_max_prediccion = df_predicciones.loc[df_predicciones[f'predicciones_{sensor_id}'].idxmax()]['fechas']
+
+                # Formatear el texto para mostrar la predicción
+                texto_sensor = html.Div([
+                    html.H4(f"{sensor}", style={'textAlign': 'center'}),
+                    html.P(fecha_max_prediccion.strftime("%H:%M:%S"), style={'textAlign': 'center'}),
+                    html.P(f"{max_prediccion:.2f} kWh", style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'}),
+                ], style={'backgroundColor': '#f2f2f2', 'borderRadius': '10px', 'margin': '10px', 'padding': '10px'})
+
+                texto_predicciones.append(texto_sensor)
+
+    if sensores_continua:
+        for sensor_id in sensores_continua:
+            sensor=escogerSensor(sensor_id)
+            api_url_sensor = f"https://api.energomonitor.com/v1/feeds/emjeic/streams/{sensor_id}/data?limit=10000"
+            df_sensor = obtener_datos(api_url_sensor, "p9pbDtQLtXui9OVz8KBoXIdp0916qE", sensor)
+            
+            if df_sensor is not None:
+                df_predicciones = predecir_arima(df_sensor, sensor_id)
+                max_prediccion = df_predicciones[f'predicciones_{sensor_id}'].max()
+                fecha_max_prediccion = df_predicciones.loc[df_predicciones[f'predicciones_{sensor_id}'].idxmax()]['fechas']
+
+                # Formatear el texto para mostrar la predicción
+                texto_sensor = html.Div([
+                    html.H4(f"{sensor}", style={'textAlign': 'center'}),
+                    html.P(fecha_max_prediccion.strftime("%H:%M:%S"), style={'textAlign': 'center'}),
+                    html.P(f"{max_prediccion:.2f} kWh", style={'fontSize': 20, 'fontWeight': 'bold', 'textAlign': 'center'}),
+                ], style={'backgroundColor': '#f2f2f2', 'borderRadius': '10px', 'margin': '10px', 'padding': '10px'})
+
+                texto_predicciones.append(texto_sensor)
+
+    return [texto_predicciones]
+
+
 
 
 # Ejecutar la aplicación
